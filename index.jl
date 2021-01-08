@@ -1,21 +1,25 @@
+println("Compiling Modules...")
 using Discord
 import DotEnv
+import TOML
 DotEnv.config()
 
+config = TOML.parsefile("./config.toml")
 commandFiles = filter(cmd -> endswith(cmd, ".jl"), readdir("./commands"))
 commands = []
+
+const PREFIX = config["prefix"]
 
 for (index, commandFile) in enumerate(commandFiles) 
     command = include("./commands/$commandFile")
     push!(commands, command)
 end
 
-println(commands)
-
-@time const C = Discord.Client(ENV["TOKEN"], prefix="$(ENV["PREFIX"]) "; presence=(game=(name=ENV["PREFIX"] * " help", type=AT_LISTENING),))
+println("Initializing Client...")
+const C = Discord.Client(ENV["TOKEN"], prefix=PREFIX; presence=(game=(name=PREFIX * "help", type=AT_LISTENING),))
 
 for (index, command) in enumerate(commands)
-    @time add_command!(C, command; precompile = true)
+    add_command!(C, command; precompile = true)
 end
 
 open(C)
